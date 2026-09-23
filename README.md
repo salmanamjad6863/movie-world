@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Movie World
 
-## Getting Started
+Cinematic Next.js app for **movies and TV seasons** with playable embeds.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 + React 19 + Tailwind 4 + Framer Motion
+- TMDB catalog
+- Multi-server embed playback (VidSrc family)
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+cd movie-world
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+→ http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Path | Purpose |
+|---|---|
+| `/` | Hero + catalog rows |
+| `/search` | Search / browse |
+| `/movie/[id]` | Movie details + Play |
+| `/tv/[id]` | Seasons / episodes + Play |
+| `/watch/movie/[id]` | Movie player |
+| `/watch/tv/[id]/[season]/[episode]` | Episode player |
 
-## Learn More
+## Servers
 
-To learn more about Next.js, take a look at the following resources:
+Watch pages include **ALPHA → ECHO** server chips. Switch if one embed fails.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Env
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+TMDB_API_KEY=...
+TMDB_READ_ACCESS_TOKEN=...   # optional
+```
 
-## Deploy on Vercel
+## Next ideas
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Watchlist / continue watching
+- HLS extraction API (native player, like anime-world)
+- Ads / auth / deploy
