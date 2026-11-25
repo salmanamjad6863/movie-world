@@ -26,7 +26,7 @@ export function HeroBanner({ item, forceType }: Props) {
       : null;
 
   return (
-    <section className="relative isolate min-h-[78vh] w-full overflow-hidden sm:min-h-[85vh]">
+    <section className="relative isolate min-h-[58vh] w-full overflow-hidden sm:min-h-[74vh]">
       {backdrop && (
         <motion.div
           initial={{ scale: 1.08, opacity: 0 }}
@@ -49,12 +49,12 @@ export function HeroBanner({ item, forceType }: Props) {
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(232,163,23,0.12),transparent_55%)]" />
 
-      <div className="relative mx-auto flex min-h-[78vh] max-w-[1400px] flex-col justify-end px-4 pb-16 pt-28 sm:min-h-[85vh] sm:px-6 sm:pb-20 lg:px-8">
+      <div className="relative mx-auto flex min-h-[58vh] max-w-[1400px] flex-col justify-end px-4 pb-10 pt-20 sm:min-h-[74vh] sm:px-6 sm:pb-14 sm:pt-24 lg:px-8">
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.5 }}
-          className="font-display text-5xl tracking-wide text-accent sm:text-6xl md:text-7xl lg:text-8xl"
+          className="font-display text-4xl tracking-wide text-accent sm:text-6xl md:text-7xl lg:text-8xl"
         >
           {SITE_NAME.toUpperCase()}
         </motion.p>
@@ -63,15 +63,15 @@ export function HeroBanner({ item, forceType }: Props) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.28, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 max-w-2xl"
+          className="mt-4 max-w-2xl sm:mt-6"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent/90">
             Featured {type}
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             {title}
           </h1>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted sm:mt-3">
             {year && <span>{year}</span>}
             {rating && (
               <span className="inline-flex items-center gap-1 text-accent">
@@ -81,21 +81,21 @@ export function HeroBanner({ item, forceType }: Props) {
             )}
           </div>
           {item.overview && (
-            <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-muted sm:text-base">
+            <p className="mt-4 hidden line-clamp-3 text-sm leading-relaxed text-muted sm:block sm:text-base">
               {item.overview}
             </p>
           )}
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-5 flex flex-wrap gap-3 sm:mt-7">
             <Link
               href={watchHref}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-background transition hover:brightness-110"
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-background transition hover:brightness-110 sm:h-12 sm:px-6"
             >
               <Play className="h-4 w-4 fill-current" />
               Play now
             </Link>
             <Link
               href={detailsHref}
-              className="inline-flex h-12 items-center gap-2 rounded-full border border-border bg-surface/60 px-6 text-sm font-medium text-foreground backdrop-blur transition hover:border-accent/40"
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-surface/60 px-5 text-sm font-medium text-foreground backdrop-blur transition hover:border-accent/40 sm:h-12 sm:px-6"
             >
               <Info className="h-4 w-4" />
               Details

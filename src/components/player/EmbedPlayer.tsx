@@ -67,7 +67,7 @@ export function EmbedPlayer({ target, title, initialServerId }: Props) {
           className="absolute inset-0 h-full w-full border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
           allowFullScreen
-          referrerPolicy="no-referrer"
+          referrerPolicy="origin"
           onLoad={() => setLoading(false)}
         />
       </div>

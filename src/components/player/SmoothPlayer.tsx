@@ -2,19 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Captions,
-  Languages,
-  Loader2,
-  Maximize,
-  Minimize,
-  RefreshCw,
-  Scan,
-  Settings2,
-  Shield,
-  Volume2,
-  ZoomIn,
-} from 'lucide-react';
+import { Languages, Loader2, RefreshCw, Settings2 } from 'lucide-react';
 import {
   STREAM_SERVERS,
   getServer,
@@ -44,18 +32,9 @@ type PickResponse = {
   working: WorkingServer[];
 };
 
-/** Fit = letterbox OK · Zoom = crop bars · Fill = crop more */
-type ViewMode = 'fit' | 'zoom' | 'fill';
-
-const VIEW_MODES: { id: ViewMode; label: string; scale: number }[] = [
-  { id: 'fit', label: 'Fit', scale: 1 },
-  { id: 'zoom', label: 'Zoom', scale: 1.2 },
-  { id: 'fill', label: 'Fill', scale: 1.36 },
-];
-
 const COVER_AFTER_LOAD_MS = 1800;
 const FAIL_OVER_MS = 9000;
-const VIEW_STORAGE_KEY = 'mw-view-mode';
+const PLAY_MESSAGE_TYPES = new Set(['PLAYER_TITLE', 'TV_INFO', 'PLAYER_UI', 'TV_STATE', 'PLAYER_EVENT']);
 
 function targetQuery(target: StreamTarget, extra?: Record<string, string>): string {
   const parts =
@@ -79,15 +58,7 @@ function spokenParam(langs: LangOption[]): string {
   return langs.map((l) => `${l.code},${l.label}`).join('|');
 }
 
-function readStoredView(): ViewMode {
-  if (typeof window === 'undefined') return 'zoom';
-  const v = window.localStorage.getItem(VIEW_STORAGE_KEY);
-  if (v === 'fit' || v === 'zoom' || v === 'fill') return v;
-  return 'zoom';
-}
-
 export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
-  const shellRef = useRef<HTMLDivElement>(null);
   const initialAudio = useMemo(
     () => (audioLanguages?.length ? audioLanguages : []),
     [audioLanguages]
@@ -95,7 +66,6 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
 
   const [phase, setPhase] = useState<'buffering' | 'ready' | 'error'>('buffering');
   const [statusLine, setStatusLine] = useState('Starting playback...');
-  const [progress, setProgress] = useState(15);
   const preferredIds = useMemo(
     () => rankServerIds(STREAM_SERVERS.filter((s) => s.adRisk !== 'high').map((s) => s.id)),
     []
@@ -122,34 +92,17 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
   const [reloadKey, setReloadKey] = useState(0);
   const [showServers, setShowServers] = useState(false);
   const [showLangs, setShowLangs] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('zoom');
-  const [adShield, setAdShield] = useState(true);
+
   const failTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const coverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedRef = useRef(false);
+  const confirmedRef = useRef(false);
+  const serverIdRef = useRef(serverId);
+  const workingRef = useRef(working);
   const prefsRef = useRef({ subLang, audioLang });
   prefsRef.current = { subLang, audioLang };
-
-  useEffect(() => {
-    setViewMode(readStoredView());
-  }, []);
-
-  const viewScale = VIEW_MODES.find((m) => m.id === viewMode)?.scale ?? 1;
-
-  const cycleViewMode = useCallback(() => {
-    setViewMode((cur) => {
-      const idx = VIEW_MODES.findIndex((m) => m.id === cur);
-      const next = VIEW_MODES[(idx + 1) % VIEW_MODES.length];
-      try {
-        window.localStorage.setItem(VIEW_STORAGE_KEY, next.id);
-      } catch {
-        // ignore
-      }
-      return next.id;
-    });
-  }, []);
+  serverIdRef.current = serverId;
+  workingRef.current = working;
 
   const server = getServer(serverId);
   const embedUrl = useMemo(
@@ -160,39 +113,29 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
   const clearTimers = useCallback(() => {
     if (failTimer.current) clearTimeout(failTimer.current);
     if (coverTimer.current) clearTimeout(coverTimer.current);
-    if (progressTimer.current) clearInterval(progressTimer.current);
     failTimer.current = null;
     coverTimer.current = null;
-    progressTimer.current = null;
-  }, []);
-
-  const startProgress = useCallback(() => {
-    setProgress(15);
-    if (progressTimer.current) clearInterval(progressTimer.current);
-    progressTimer.current = setInterval(() => {
-      setProgress((p) => (p >= 90 ? 90 : p + Math.random() * 8 + 3));
-    }, 280);
   }, []);
 
   const revealPlayer = useCallback(() => {
-    setProgress(100);
     setPhase('ready');
     setStatusLine('');
-    if (progressTimer.current) clearInterval(progressTimer.current);
   }, []);
 
   const tryServer = useCallback(
     (id: string, list: string[]) => {
+      confirmedRef.current = false;
       setServerId(id);
       setPhase('buffering');
-      setAdShield(true);
+      setShowLangs(false);
+      setShowServers(false);
       setStatusLine(`Loading ${getServer(id).label}...`);
-      startProgress();
 
       if (failTimer.current) clearTimeout(failTimer.current);
       if (coverTimer.current) clearTimeout(coverTimer.current);
 
       failTimer.current = setTimeout(() => {
+        if (confirmedRef.current) return;
         const idx = list.indexOf(id);
         const next = list[idx + 1];
         if (next) {
@@ -204,7 +147,7 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
         }
       }, FAIL_OVER_MS);
     },
-    [startProgress]
+    []
   );
 
   const loadTracks = useCallback(async () => {
@@ -231,7 +174,9 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
       }
     } catch {
       setAudioOptions(initialAudio);
-      setSubLangOptions(initialAudio.some((a) => a.code === 'en') ? [{ code: 'en', label: 'English' }] : []);
+      setSubLangOptions(
+        initialAudio.some((a) => a.code === 'en') ? [{ code: 'en', label: 'English' }] : []
+      );
     } finally {
       setTracksLoading(false);
     }
@@ -273,12 +218,13 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
       if (!ordered.length) return;
       setWorking(ordered);
 
-      // If still buffering on a high-ad host, hop to preferred clean one
       setServerId((cur) => {
         const preferred = ordered[0]?.id;
         if (!preferred) return cur;
+        if (confirmedRef.current) return cur;
+        const curWorking = ordered.some((w) => w.id === cur);
         const curMeta = getServer(cur);
-        if (curMeta.adRisk === 'high' && preferred !== cur) {
+        if (preferred !== cur && (!curWorking || curMeta.adRisk === 'high')) {
           setReloadKey((k) => k + 1);
           tryServer(
             preferred,
@@ -293,7 +239,6 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
     }
   }, [target, tryServer]);
 
-  // Play immediately — don't wait for probe / tracks
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
@@ -302,36 +247,52 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
     void pickInBackground();
     void loadTracks();
     return clearTimers;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once per target via key from parent
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once per target
   }, [target.type, target.tmdbId, 'season' in target ? target.season : 0, 'episode' in target ? target.episode : 0]);
 
-  useEffect(() => {
-    const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
-    document.addEventListener('fullscreenchange', onFsChange);
-    return () => document.removeEventListener('fullscreenchange', onFsChange);
-  }, []);
-
-  const toggleFullscreen = useCallback(async () => {
-    const el = shellRef.current;
-    if (!el) return;
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else await el.requestFullscreen();
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const onIframeLoad = () => {
+  const markConfirmed = useCallback(() => {
+    if (confirmedRef.current) return;
+    confirmedRef.current = true;
     if (failTimer.current) {
       clearTimeout(failTimer.current);
       failTimer.current = null;
     }
+    revealPlayer();
+  }, [revealPlayer]);
+
+  const onIframeLoad = () => {
     if (coverTimer.current) clearTimeout(coverTimer.current);
     setStatusLine('Almost ready...');
-    setProgress((p) => Math.max(p, 75));
-    coverTimer.current = setTimeout(() => revealPlayer(), COVER_AFTER_LOAD_MS);
+    coverTimer.current = setTimeout(() => markConfirmed(), COVER_AFTER_LOAD_MS);
   };
+
+  const failOverNow = useCallback(() => {
+    if (confirmedRef.current) return;
+    const list = workingRef.current.map((w) => w.id);
+    const ids = list.length ? list : preferredIds;
+    const cur = serverIdRef.current;
+    const next = ids[ids.indexOf(cur) + 1];
+    if (next) {
+      setReloadKey((k) => k + 1);
+      tryServer(next, ids);
+    } else {
+      setPhase('error');
+      setStatusLine('Unable to start playback.');
+    }
+  }, [preferredIds, tryServer]);
+
+  useEffect(() => {
+    const onMsg = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+      const type = (data as { type?: string }).type;
+      if (!type) return;
+      if (PLAY_MESSAGE_TYPES.has(type)) markConfirmed();
+      if (type === 'MEDIA_NOT_FOUND') failOverNow();
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [failOverNow, markConfirmed]);
 
   const refreshAll = () => {
     startedRef.current = false;
@@ -373,77 +334,22 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
   const subLabel = subLangOptions.find((l) => l.code === subLang)?.label || subLang.toUpperCase();
   const audioLabel =
     audioOptions.find((l) => l.code === audioLang)?.label || audioLang.toUpperCase();
-  const viewLabel = VIEW_MODES.find((m) => m.id === viewMode)?.label || 'Zoom';
 
   return (
     <div className="space-y-3">
-      <div
-        ref={shellRef}
-        className={cn(
-          'relative w-full overflow-hidden rounded-xl bg-black shadow-2xl ring-1 ring-border',
-          isFullscreen ? 'h-screen rounded-none ring-0' : 'aspect-video'
-        )}
-      >
+      <div className="player-shell relative aspect-video w-full overflow-hidden rounded-xl bg-black shadow-2xl ring-1 ring-border">
         {(phase === 'buffering' || phase === 'ready') && (
-          <div className="absolute inset-0 overflow-hidden bg-black">
-            <iframe
-              key={`${embedUrl}-${reloadKey}`}
-              src={embedUrl}
-              title={title}
-              className="absolute inset-0 h-full w-full border-0 transition-transform duration-300 ease-out"
-              style={{
-                transform: `scale(${viewScale})`,
-                transformOrigin: 'center center',
-              }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-              referrerPolicy="no-referrer"
-              onLoad={onIframeLoad}
-            />
-          </div>
-        )}
-
-        {/* Eats the first click so embed redirect-ads don't steal the tab */}
-        {phase === 'ready' && adShield && (
-          <button
-            type="button"
-            aria-label="Tap to watch — blocks ad redirects"
-            onClick={() => setAdShield(false)}
-            className="absolute inset-0 flex cursor-pointer items-end justify-center bg-transparent pb-16"
-            style={{ zIndex: 25 }}
-          >
-            <span className="inline-flex items-center gap-2 rounded-full bg-black/75 px-4 py-2 text-xs font-medium text-white backdrop-blur">
-              <Shield className="h-3.5 w-3.5 text-accent" />
-              Tap to watch · ad shield on
-            </span>
-          </button>
-        )}
-
-        {phase === 'ready' && (
-          <div className="absolute right-3 bottom-3 z-30 flex gap-2">
-            <button
-              type="button"
-              onClick={cycleViewMode}
-              aria-label={`Screen mode: ${viewLabel}`}
-              title="Fit / Zoom / Fill — remove black bars"
-              className="flex h-10 items-center gap-1.5 rounded-lg bg-black/70 px-3 text-xs font-semibold text-white backdrop-blur transition hover:bg-accent hover:text-background"
-            >
-              {viewMode === 'fit' ? (
-                <Scan className="h-4 w-4" />
-              ) : (
-                <ZoomIn className="h-4 w-4" />
-              )}
-              {viewLabel}
-            </button>
-            <button
-              type="button"
-              onClick={() => void toggleFullscreen()}
-              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/70 text-white backdrop-blur transition hover:bg-accent hover:text-background"
-            >
-              {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-            </button>
-          </div>
+          <iframe
+            key={`${embedUrl}-${reloadKey}`}
+            src={embedUrl}
+            title={title}
+            className="absolute inset-0 h-full w-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            referrerPolicy="origin"
+            onLoad={onIframeLoad}
+            onError={failOverNow}
+          />
         )}
 
         <AnimatePresence>
@@ -452,74 +358,42 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
               key="loader"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.25 } }}
-              className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-background"
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black"
             >
-              <div className="relative h-14 w-14">
-                <div className="h-14 w-14 rounded-full border-2 border-accent/25" />
-                <Loader2 className="absolute inset-0 m-auto h-8 w-8 animate-spin text-accent" />
-              </div>
-              <div className="max-w-sm px-6 text-center">
-                <p className="font-display text-3xl tracking-wide text-foreground">MOVIE WORLD</p>
-                <p className="mt-2 text-sm text-muted">{statusLine || 'Loading...'}</p>
-                <div className="mx-auto mt-4 h-1 w-44 overflow-hidden rounded-full bg-surface-2">
-                  <motion.div
-                    className="h-full rounded-full bg-accent"
-                    initial={{ width: '12%' }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ ease: 'easeOut', duration: 0.25 }}
-                  />
-                </div>
-              </div>
-              {phase === 'error' && (
-                <button
-                  type="button"
-                  onClick={refreshAll}
-                  className="mt-1 inline-flex h-10 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-background"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Try again
-                </button>
+              {phase === 'error' ? (
+                <>
+                  <p className="px-6 text-center text-sm text-white/70">
+                    {statusLine || 'Unable to start playback.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={refreshAll}
+                    className="inline-flex h-10 items-center gap-2 rounded-md bg-accent px-5 text-sm font-semibold text-background"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Try again
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="h-8 w-8 animate-spin text-accent" />
+                  <p className="text-sm text-white/60">{statusLine || 'Loading…'}</p>
+                </>
               )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
+      {/* Utility controls below the embed — do not cover native player UI */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-          {phase === 'ready' ? (
-            <>
-              <span className="inline-flex items-center gap-1">
-                <Shield className="h-3.5 w-3.5 text-accent" />
-                {adShield ? 'Ad shield ready' : 'Playing · CLEAN sources preferred'}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <ZoomIn className="h-3.5 w-3.5 text-accent" />
-                View: {viewLabel}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Volume2 className="h-3.5 w-3.5 text-accent" />
-                {audioOptions.length ? audioLabel : '—'}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Captions className="h-3.5 w-3.5 text-accent" />
-                {subLangOptions.length ? subLabel : tracksLoading ? '…' : 'no subs'}
-              </span>
-            </>
-          ) : (
-            'Loading…'
-          )}
+        <p className="text-xs text-muted">
+          {phase === 'ready'
+            ? `${server.label}${audioOptions.length ? ` · ${audioLabel}` : ''}${subLangOptions.length ? ` · ${subLabel}` : ''}`
+            : 'Loading…'}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={cycleViewMode}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs text-muted transition hover:text-foreground"
-          >
-            <ZoomIn className="h-3.5 w-3.5" />
-            {viewLabel}
-          </button>
           <button
             type="button"
             onClick={() => {
@@ -530,14 +404,6 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
           >
             <Languages className="h-3.5 w-3.5" />
             Audio / Subs
-          </button>
-          <button
-            type="button"
-            onClick={() => void toggleFullscreen()}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs text-muted transition hover:text-foreground"
-          >
-            {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
-            Fullscreen
           </button>
           <button
             type="button"
@@ -564,11 +430,9 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
       {showLangs ? (
         <div className="space-y-4 rounded-xl border border-border bg-surface/40 p-3">
           <div>
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Audio · available for this title
-            </p>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">Audio</p>
             {audioOptions.length === 0 ? (
-              <p className="text-xs text-muted">No audio languages listed for this title.</p>
+              <p className="text-xs text-muted">No audio languages listed.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {audioOptions.map((l) => (
@@ -591,12 +455,12 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
           </div>
           <div>
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Subtitles · available for this {target.type === 'tv' ? 'episode' : 'movie'}
+              Subtitles
             </p>
             {tracksLoading ? (
-              <p className="text-xs text-muted">Checking available subtitles…</p>
+              <p className="text-xs text-muted">Checking subtitles…</p>
             ) : subLangOptions.length === 0 ? (
-              <p className="text-xs text-muted">No subtitles found for this title yet.</p>
+              <p className="text-xs text-muted">No subtitles found.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {subLangOptions.map((l) => (
@@ -622,9 +486,7 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
 
       {showServers ? (
         <div className="rounded-xl border border-border bg-surface/40 p-3">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Working sources
-          </p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">Sources</p>
           <div className="flex flex-wrap gap-2">
             {working.map((s) => (
               <button
@@ -646,9 +508,7 @@ export function SmoothPlayer({ target, title, audioLanguages, imdbId }: Props) {
                 )}
               >
                 {s.label}
-                {s.softSubs ? ' · SUBS' : ''}
-                {s.multiAudio ? ' · AUDIO' : ''}
-                {s.adRisk === 'low' ? ' · CLEAN' : ''}
+                {s.adRisk === 'low' ? ' · Clean' : ''}
               </button>
             ))}
           </div>

@@ -27,10 +27,10 @@ export function MediaCard({ item, forceType, index = 0, className }: Props) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
       viewport={{ once: true, margin: '-20px' }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.28), ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.28), ease: [0.22, 1, 0.36, 1] }}
       className={cn('w-[140px] shrink-0 sm:w-[160px] md:w-[180px]', className)}
     >
       <Link href={href} className="group block">

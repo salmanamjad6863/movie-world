@@ -17,6 +17,8 @@ type Props = {
   prev?: NavLink;
   next?: NavLink;
   sidebar?: React.ReactNode;
+  /** Full-width section under the player (e.g. recommended titles) */
+  below?: React.ReactNode;
 };
 
 export function WatchShell({
@@ -30,6 +32,7 @@ export function WatchShell({
   prev,
   next,
   sidebar,
+  below,
 }: Props) {
   return (
     <main className="flex w-full flex-1 flex-col bg-background">
@@ -74,7 +77,7 @@ export function WatchShell({
         </div>
       </div>
 
-      <div className="mx-auto grid w-full max-w-[1400px] flex-1 gap-6 px-4 py-5 sm:gap-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:px-8">
+      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-4 py-5 sm:gap-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:px-8">
         <div className="min-w-0">
           <SmoothPlayer
             target={target}
@@ -85,6 +88,10 @@ export function WatchShell({
         </div>
         {sidebar ? <div className="min-w-0">{sidebar}</div> : null}
       </div>
+
+      {below ? (
+        <section className="border-t border-border/60 py-8 sm:py-10">{below}</section>
+      ) : null}
     </main>
   );
 }

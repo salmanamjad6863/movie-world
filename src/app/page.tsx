@@ -1,6 +1,8 @@
+import type { Metadata } from 'next';
 import { HeroBanner } from '@/components/home/HeroBanner';
 import { MediaRow } from '@/components/media/MediaRow';
 import { TmdbMissingKey } from '@/components/ui/TmdbMissingKey';
+import { SITE_DESCRIPTION, SITE_TITLE_DEFAULT, absoluteUrl } from '@/constants/site';
 import {
   getAiringTodayTv,
   getNowPlayingMovies,
@@ -14,6 +16,18 @@ import {
 import type { TmdbMediaListItem } from '@/types/tmdb';
 
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: { absolute: SITE_TITLE_DEFAULT },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: absoluteUrl('/') },
+  openGraph: {
+    title: SITE_TITLE_DEFAULT,
+    description: SITE_DESCRIPTION,
+    url: absoluteUrl('/'),
+    type: 'website',
+  },
+};
 
 async function loadHome() {
   if (!isTmdbConfigured()) return { configured: false as const };

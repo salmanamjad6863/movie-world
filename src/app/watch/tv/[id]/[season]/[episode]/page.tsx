@@ -1,8 +1,18 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { MediaRow } from '@/components/media/MediaRow';
 import { WatchShell } from '@/components/player/WatchShell';
 import { TmdbMissingKey } from '@/components/ui/TmdbMissingKey';
-import { getTv, getTvEpisodeExternalIds, getTvExternalIds, getTvSeason, isTmdbConfigured, TmdbConfigError } from '@/lib/tmdb';
+import {
+  getTv,
+  getTvEpisodeExternalIds,
+  getTvExternalIds,
+  getTvSeason,
+  getTvSuggested,
+  isTmdbConfigured,
+  TmdbConfigError,
+} from '@/lib/tmdb';
+import { buildMediaMetadata } from '@/lib/seo';
 import { audioLangsFromTmdb, watchTvPath } from '@/lib/stream-servers';
 import { cn } from '@/lib/utils';
 import type { Metadata } from 'next';
@@ -13,15 +23,21 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  if (!isTmdbConfigured()) return { title: 'Watch' };
+  if (!isTmdbConfigured()) return { title: 'Watch', robots: { index: false, follow: true } };
   try {
     const { id, season, episode } = await params;
     const show = await getTv(id);
-    return {
+    return buildMediaMetadata({
       title: `Watch ${show.name} S${season}E${episode}`,
-    };
+      description: show.overview,
+      path: `/watch/tv/${id}/${season}/${episode}`,
+      type: 'tv',
+      backdropPath: show.backdrop_path,
+      posterPath: show.poster_path,
+      noIndex: true,
+    });
   } catch {
-    return { title: 'Watch' };
+    return { title: 'Watch', robots: { index: false, follow: true } };
   }
 }
 
@@ -77,6 +93,7 @@ export default async function WatchTvEpisodePage({ params, searchParams }: Props
   const seasons = (show.seasons || []).filter((s) => s.season_number > 0);
   const serverQ = sp.server ? `?server=${sp.server}` : '';
   const audioLanguages = audioLangsFromTmdb(show);
+  const recommended = await getTvSuggested(id, 18);
 
   return (
     <WatchShell
@@ -148,6 +165,13 @@ export default async function WatchTvEpisodePage({ params, searchParams }: Props
             })}
           </ul>
         </aside>
+      }
+      below={
+        recommended.length ? (
+          <div className="mx-auto w-full max-w-[1400px]">
+            <MediaRow title="Recommended Series" items={recommended} forceType="tv" />
+          </div>
+        ) : null
       }
     />
   );

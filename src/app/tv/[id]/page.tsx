@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Star, ArrowLeft, Play } from 'lucide-react';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { TmdbMissingKey } from '@/components/ui/TmdbMissingKey';
 import {
   backdropUrl,
@@ -11,6 +12,7 @@ import {
   posterUrl,
   TmdbConfigError,
 } from '@/lib/tmdb';
+import { buildMediaMetadata, tvSeriesJsonLd } from '@/lib/seo';
 import { watchTvPath } from '@/lib/stream-servers';
 import type { Metadata } from 'next';
 
@@ -24,10 +26,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const { id } = await params;
     const show = await getTv(id);
-    return {
-      title: show.name,
-      description: show.overview?.slice(0, 160) || undefined,
-    };
+    const year = show.first_air_date?.slice(0, 4);
+    return buildMediaMetadata({
+      title: year ? `${show.name} (${year})` : show.name,
+      description: show.overview || show.tagline,
+      path: `/tv/${id}`,
+      type: 'tv',
+      backdropPath: show.backdrop_path,
+      posterPath: show.poster_path,
+    });
   } catch {
     return { title: 'TV Show' };
   }
@@ -79,6 +86,17 @@ export default async function TvPage({ params, searchParams }: Props) {
 
   return (
     <main className="relative flex-1">
+      <JsonLd
+        data={tvSeriesJsonLd({
+          id: show.id,
+          name: show.name,
+          description: show.overview,
+          posterPath: show.poster_path,
+          backdropPath: show.backdrop_path,
+          firstAirDate: show.first_air_date,
+          rating: show.vote_average,
+        })}
+      />
       {backdrop && (
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[55vh] overflow-hidden">
           <Image src={backdrop} alt="" fill priority className="object-cover opacity-40" sizes="100vw" />

@@ -43,25 +43,6 @@ body {
   color: #0a0a0a;
 }
 
-/* Horizontal row scrollbar — subtle */
-.media-row-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(232, 163, 23, 0.35) transparent;
-}
-
-.media-row-scroll::-webkit-scrollbar {
-  height: 6px;
-}
-
-.media-row-scroll::-webkit-scrollbar-thumb {
-  background: rgba(232, 163, 23, 0.35);
-  border-radius: 999px;
-}
-
-.media-row-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -80,4 +61,14 @@ body {
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* Fullscreen player fills the screen; chrome stays inside this element */
+.player-shell:fullscreen,
+.player-shell:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  border-radius: 0 !important;
+  background: #000;
 }

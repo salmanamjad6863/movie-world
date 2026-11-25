@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Movie World">
+  <rect width="64" height="64" rx="14" fill="#07070a"/>
+  <rect x="10" y="10" width="44" height="44" rx="9" fill="#e8a317"/>
+  <!-- clapper teeth -->
+  <path fill="#07070a" d="M14 10h7l3.5 9H14.5L14 10zm11 0h7l3.5 9H25.5L25 10zm11 0h7l3.5 9H36.5L36 10z"/>
+  <rect x="10" y="19" width="44" height="3.5" fill="#07070a"/>
+  <!-- clapperboard body lines -->
+  <path stroke="#07070a" stroke-width="2.2" stroke-linecap="round" d="M18 30h28M18 37h20M18 44h24" opacity="0.35"/>
+  <!-- play mark -->
+  <path fill="#07070a" d="M28 28.5v15l13-7.5-13-7.5z"/>
+</svg>

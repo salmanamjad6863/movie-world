@@ -133,6 +133,71 @@ export async function getTv(id: number | string): Promise<TmdbTvDetails> {
   return tmdbFetch(`/tv/${id}`);
 }
 
+export async function getMovieRecommendations(
+  id: number | string,
+  page = 1
+): Promise<TmdbPagedResponse<TmdbMediaListItem>> {
+  return tmdbFetch(`/movie/${id}/recommendations`, { page });
+}
+
+export async function getMovieSimilar(
+  id: number | string,
+  page = 1
+): Promise<TmdbPagedResponse<TmdbMediaListItem>> {
+  return tmdbFetch(`/movie/${id}/similar`, { page });
+}
+
+export async function getTvRecommendations(
+  id: number | string,
+  page = 1
+): Promise<TmdbPagedResponse<TmdbMediaListItem>> {
+  return tmdbFetch(`/tv/${id}/recommendations`, { page });
+}
+
+export async function getTvSimilar(
+  id: number | string,
+  page = 1
+): Promise<TmdbPagedResponse<TmdbMediaListItem>> {
+  return tmdbFetch(`/tv/${id}/similar`, { page });
+}
+
+/** Prefer recommendations; fall back to similar titles when empty. */
+export async function getMovieSuggested(
+  id: number | string,
+  limit = 18
+): Promise<TmdbMediaListItem[]> {
+  try {
+    const recs = await getMovieRecommendations(id);
+    if (recs.results?.length) return recs.results.slice(0, limit);
+  } catch {
+    // fall through
+  }
+  try {
+    const similar = await getMovieSimilar(id);
+    return (similar.results || []).slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+export async function getTvSuggested(
+  id: number | string,
+  limit = 18
+): Promise<TmdbMediaListItem[]> {
+  try {
+    const recs = await getTvRecommendations(id);
+    if (recs.results?.length) return recs.results.slice(0, limit);
+  } catch {
+    // fall through
+  }
+  try {
+    const similar = await getTvSimilar(id);
+    return (similar.results || []).slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
 export async function getTvSeason(
   tvId: number | string,
   seasonNumber: number | string

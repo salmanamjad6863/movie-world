@@ -1,7 +1,9 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { MediaGrid } from '@/components/media/MediaGrid';
 import { SearchForm } from '@/components/search/SearchForm';
 import { TmdbMissingKey } from '@/components/ui/TmdbMissingKey';
+import { SITE_NAME, absoluteUrl } from '@/constants/site';
 import {
   getPopularMovies,
   getPopularTv,
@@ -15,9 +17,40 @@ import type { MediaType, TmdbMediaListItem } from '@/types/tmdb';
 
 type SearchParams = Promise<{ q?: string; type?: string }>;
 
-export const metadata = {
-  title: 'Search',
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const q = (params.q || '').trim();
+  const type = params.type === 'movie' ? 'Movies' : params.type === 'tv' ? 'Series' : 'Movies & Series';
+  const title = q ? `Search “${q}”` : `Search ${type}`;
+  const description = q
+    ? `Results for “${q}” on ${SITE_NAME} — browse matching ${type.toLowerCase()}.`
+    : `Search ${type.toLowerCase()} across trending titles, popular films, and TV seasons.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: absoluteUrl(
+        q
+          ? `/search?q=${encodeURIComponent(q)}${params.type ? `&type=${params.type}` : ''}`
+          : params.type
+            ? `/search?type=${params.type}`
+            : '/search'
+      ),
+    },
+    robots: q ? { index: false, follow: true } : { index: true, follow: true },
+    openGraph: {
+      title,
+      description,
+      url: absoluteUrl('/search'),
+      type: 'website',
+    },
+  };
+}
 
 async function runSearch(q: string, type: string): Promise<TmdbMediaListItem[]> {
   if (type === 'movie') {

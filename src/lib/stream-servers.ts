@@ -61,6 +61,26 @@ function withParams(base: string, params: Record<string, string | undefined>): s
   return url.toString();
 }
 
+function vidsrcQuery(t: StreamTarget): string {
+  return t.type === 'movie'
+    ? `movie?tmdb=${idOf(t)}`
+    : `tv?tmdb=${idOf(t)}&season=${t.season}&episode=${t.episode}`;
+}
+
+function vsembedPath(t: StreamTarget): string {
+  return t.type === 'movie'
+    ? `embed/movie/${idOf(t)}`
+    : `embed/tv/${idOf(t)}/${t.season}/${t.episode}`;
+}
+
+function vidsrcParams(opts?: EmbedOptions): Record<string, string | undefined> {
+  return {
+    ds_lang: opts?.lang || 'en',
+    audio_lang: opts?.audio,
+    sub_url: opts?.subUrl,
+  };
+}
+
 export const STREAM_SERVERS: StreamServer[] = [
   {
     id: 'vidsrc-me',
@@ -69,19 +89,8 @@ export const STREAM_SERVERS: StreamServer[] = [
     softSubs: true,
     multiAudio: true,
     adRisk: 'low',
-    buildUrl: (t, opts) => {
-      const lang = opts?.lang || 'en';
-      const base =
-        t.type === 'movie'
-          ? `https://vidsrc.me/embed/movie?tmdb=${idOf(t)}`
-          : `https://vidsrc.me/embed/tv?tmdb=${idOf(t)}&season=${t.season}&episode=${t.episode}`;
-      return withParams(base, {
-        ds_lang: lang,
-        audio_lang: opts?.audio,
-        sub_url: opts?.subUrl,
-        autoplay: '1',
-      });
-    },
+    // vidsrc.me now 301s to vidsrc.sh; Chrome treats the old host as a dead iframe.
+    buildUrl: (t, opts) => withParams(`https://vidsrc.sh/embed/${vidsrcQuery(t)}`, vidsrcParams(opts)),
   },
   {
     id: 'vidsrc-embed',
@@ -90,19 +99,7 @@ export const STREAM_SERVERS: StreamServer[] = [
     softSubs: true,
     multiAudio: true,
     adRisk: 'low',
-    buildUrl: (t, opts) => {
-      const lang = opts?.lang || 'en';
-      const base =
-        t.type === 'movie'
-          ? `https://vidsrc-embed.ru/embed/movie?tmdb=${idOf(t)}`
-          : `https://vidsrc-embed.ru/embed/tv?tmdb=${idOf(t)}&season=${t.season}&episode=${t.episode}`;
-      return withParams(base, {
-        ds_lang: lang,
-        audio_lang: opts?.audio,
-        sub_url: opts?.subUrl,
-        autoplay: '1',
-      });
-    },
+    buildUrl: (t, opts) => withParams(`https://vsembed.ru/${vsembedPath(t)}`, vidsrcParams(opts)),
   },
   {
     id: 'vidsrc-sbs',
@@ -111,19 +108,7 @@ export const STREAM_SERVERS: StreamServer[] = [
     softSubs: true,
     multiAudio: true,
     adRisk: 'low',
-    buildUrl: (t, opts) => {
-      const lang = opts?.lang || 'en';
-      const path =
-        t.type === 'movie'
-          ? `https://vidsrc.sbs/embed/movie/${idOf(t)}`
-          : `https://vidsrc.sbs/embed/tv/${idOf(t)}/${t.season}/${t.episode}`;
-      return withParams(path, {
-        sub: lang,
-        audio: opts?.audio,
-        autoplay: '1',
-        sub_url: opts?.subUrl,
-      });
-    },
+    buildUrl: (t, opts) => withParams(`https://vsembed.su/${vsembedPath(t)}`, vidsrcParams(opts)),
   },
   {
     id: 'vidsrc-su',
