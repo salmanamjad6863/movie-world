@@ -1,11 +1,16 @@
 import type { MetadataRoute } from 'next';
+import { SEO_HUBS } from '@/constants/seo';
 import { SITE_URL } from '@/constants/site';
 import {
+  getAiringTodayTv,
   getNowPlayingMovies,
+  getOnTheAirTv,
   getPopularMovies,
   getPopularTv,
   getTopRatedMovies,
+  getTopRatedTv,
   getTrending,
+  getUpcomingMovies,
   isTmdbConfigured,
 } from '@/lib/tmdb';
 
@@ -18,6 +23,16 @@ function uniqueById<T extends { id: number }>(items: T[]): T[] {
     seen.add(item.id);
     return true;
   });
+}
+
+async function fetchPages<T>(
+  loader: (page: number) => Promise<{ results: T[] }>,
+  pages: number
+): Promise<T[]> {
+  const responses = await Promise.all(
+    Array.from({ length: pages }, (_, i) => loader(i + 1).catch(() => ({ results: [] as T[] })))
+  );
+  return responses.flatMap((r) => r.results);
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -35,44 +50,56 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${base}/search`,
       lastModified: now,
       changeFrequency: 'daily',
-      priority: 0.8,
+      priority: 0.75,
     },
-    {
-      url: `${base}/search?type=movie`,
+    ...SEO_HUBS.map((hub) => ({
+      url: `${base}${hub.path}`,
       lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
-    {
-      url: `${base}/search?type=tv`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
+      changeFrequency: 'daily' as const,
+      priority: hub.priority,
+    })),
   ];
 
   if (!isTmdbConfigured()) return staticRoutes;
 
   try {
-    const [trending, popularMovies, topRated, nowPlaying, popularTv] = await Promise.all([
+    const [
+      trending,
+      popularMovies,
+      topRatedMovies,
+      nowPlaying,
+      upcoming,
+      popularTv,
+      topRatedTv,
+      airing,
+      onTheAir,
+    ] = await Promise.all([
       getTrending('all', 'week'),
-      getPopularMovies(),
-      getTopRatedMovies(),
-      getNowPlayingMovies(),
-      getPopularTv(),
+      fetchPages(getPopularMovies, 5),
+      fetchPages(getTopRatedMovies, 3),
+      fetchPages(getNowPlayingMovies, 2),
+      fetchPages(getUpcomingMovies, 2),
+      fetchPages(getPopularTv, 5),
+      fetchPages(getTopRatedTv, 3),
+      fetchPages(getAiringTodayTv, 2),
+      fetchPages(getOnTheAirTv, 2),
     ]);
 
     const movies = uniqueById([
-      ...popularMovies.results,
-      ...topRated.results,
-      ...nowPlaying.results,
-      ...trending.results.filter((r) => r.media_type === 'movie' || r.title),
-    ]).slice(0, 120);
+      ...popularMovies,
+      ...topRatedMovies,
+      ...nowPlaying,
+      ...upcoming,
+      ...trending.results.filter((r) => r.media_type === 'movie' || Boolean(r.title)),
+    ]).slice(0, 500);
 
     const shows = uniqueById([
-      ...popularTv.results,
-      ...trending.results.filter((r) => r.media_type === 'tv' || r.name),
-    ]).slice(0, 120);
+      ...popularTv,
+      ...topRatedTv,
+      ...airing,
+      ...onTheAir,
+      ...trending.results.filter((r) => r.media_type === 'tv' || Boolean(r.name && !r.title)),
+    ]).slice(0, 500);
 
     const movieRoutes: MetadataRoute.Sitemap = movies.map((movie) => ({
       url: `${base}/movie/${movie.id}`,

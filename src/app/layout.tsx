@@ -3,6 +3,7 @@ import { Bebas_Neue, DM_Sans } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { JsonLd } from '@/components/seo/JsonLd';
+import { SITE_KEYWORDS } from '@/constants/seo';
 import {
   SITE_DESCRIPTION,
   SITE_LOCALE,
@@ -49,15 +50,7 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   category: 'entertainment',
-  keywords: [
-    'movies',
-    'tv shows',
-    'series',
-    'seasons',
-    'streaming catalog',
-    'trending movies',
-    SITE_NAME,
-  ],
+  keywords: [...SITE_KEYWORDS],
   alternates: {
     canonical: absoluteUrl('/'),
   },

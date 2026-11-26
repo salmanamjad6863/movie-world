@@ -1,18 +1,37 @@
 import Link from 'next/link';
+import { SEO_HUBS } from '@/constants/seo';
 import { SITE_NAME } from '@/constants/site';
 
 export function Footer() {
   return (
     <footer className="mt-auto border-t border-border bg-surface/40">
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-4 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-        <div>
-          <p className="font-display text-xl tracking-wide text-foreground">
-            <span className="text-accent">MOVIE</span> WORLD
-          </p>
-          <p className="mt-1 max-w-md text-sm text-muted">
-            Browse movies and TV seasons. Catalog powered by TMDB.
-          </p>
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="font-display text-xl tracking-wide text-foreground">
+              <span className="text-accent">MOVIE</span> WORLD
+            </p>
+            <p className="mt-1 max-w-md text-sm text-muted">
+              Watch free movies and free TV seasons online. Catalog powered by TMDB.
+            </p>
+          </div>
+
+          <nav aria-label="Popular catalogs" className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
+            {SEO_HUBS.map((hub) => (
+              <Link
+                key={hub.slug}
+                href={hub.path}
+                className="text-muted transition hover:text-accent"
+              >
+                {hub.heading}
+              </Link>
+            ))}
+            <Link href="/search" className="text-muted transition hover:text-accent">
+              Search
+            </Link>
+          </nav>
         </div>
+
         <div className="space-y-2 text-sm text-muted">
           <p>
             This product uses the TMDB API but is not endorsed or certified by{' '}
@@ -26,7 +45,9 @@ export function Footer() {
             </Link>
             .
           </p>
-          <p className="text-xs text-muted/70">© {new Date().getFullYear()} {SITE_NAME}</p>
+          <p className="text-xs text-muted/70">
+            © {new Date().getFullYear()} {SITE_NAME}
+          </p>
         </div>
       </div>
     </footer>

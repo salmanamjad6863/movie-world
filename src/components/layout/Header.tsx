@@ -16,14 +16,23 @@ function NavLinks() {
   const items = [
     { href: '/', label: 'Home', active: pathname === '/' },
     {
-      href: '/search?type=movie',
+      href: '/movies',
       label: 'Movies',
-      active: pathname.startsWith('/movie') || (pathname.startsWith('/search') && type === 'movie'),
+      active:
+        pathname === '/movies' ||
+        pathname === '/free-movies' ||
+        pathname === '/online-movies' ||
+        pathname.startsWith('/movie') ||
+        (pathname.startsWith('/search') && type === 'movie'),
     },
     {
-      href: '/search?type=tv',
+      href: '/tv-shows',
       label: 'Series',
-      active: pathname.startsWith('/tv') || (pathname.startsWith('/search') && type === 'tv'),
+      active:
+        pathname === '/tv-shows' ||
+        pathname === '/free-seasons' ||
+        pathname.startsWith('/tv') ||
+        (pathname.startsWith('/search') && type === 'tv'),
     },
   ];
 

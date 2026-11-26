@@ -17,13 +17,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
     const movie = await getMovie(id);
     const year = movie.release_date?.slice(0, 4);
+    const genreNames = (movie.genres || []).map((g) => g.name);
     return buildMediaMetadata({
       title: year ? `${movie.title} (${year})` : movie.title,
-      description: movie.overview || movie.tagline,
+      description:
+        movie.overview ||
+        `Watch ${movie.title} free online on Movie World. Stream this movie and find similar titles.`,
       path: `/movie/${id}`,
       type: 'movie',
       backdropPath: movie.backdrop_path,
       posterPath: movie.poster_path,
+      keywords: [
+        movie.title,
+        ...(year ? [`${movie.title} ${year}`] : []),
+        ...genreNames,
+        'free movies',
+        'online movies',
+        'watch movies online',
+        'Movie World',
+      ],
     });
   } catch {
     return { title: 'Movie' };

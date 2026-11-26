@@ -10,11 +10,11 @@ export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'Movie World';
 
 export const SITE_DESCRIPTION =
   process.env.NEXT_PUBLIC_SITE_DESCRIPTION ||
-  'Discover movies and TV seasons. Browse trending titles, explore episodes, and find what to watch next.';
+  'Watch free movies and free TV seasons online. Browse trending films, popular series, and new releases on Movie World.';
 
-export const SITE_TITLE_DEFAULT = `${SITE_NAME} — Movies & TV Seasons`;
+export const SITE_TITLE_DEFAULT = `${SITE_NAME} — Free Movies & TV Seasons Online`;
 
-export const SITE_TAGLINE = 'Movies & TV seasons in one place';
+export const SITE_TAGLINE = 'Free movies & TV seasons online';
 
 export const SITE_LOCALE = 'en_US';
 

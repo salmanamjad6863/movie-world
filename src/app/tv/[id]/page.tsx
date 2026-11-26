@@ -27,13 +27,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
     const show = await getTv(id);
     const year = show.first_air_date?.slice(0, 4);
+    const genreNames = (show.genres || []).map((g) => g.name);
     return buildMediaMetadata({
       title: year ? `${show.name} (${year})` : show.name,
-      description: show.overview || show.tagline,
+      description:
+        show.overview ||
+        `Watch ${show.name} free seasons online on Movie World. Browse episodes and related series.`,
       path: `/tv/${id}`,
       type: 'tv',
       backdropPath: show.backdrop_path,
       posterPath: show.poster_path,
+      keywords: [
+        show.name,
+        ...(year ? [`${show.name} ${year}`] : []),
+        ...genreNames,
+        'free seasons',
+        'free TV shows',
+        'watch TV seasons online',
+        'Movie World',
+      ],
     });
   } catch {
     return { title: 'TV Show' };

@@ -20,6 +20,14 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: { absolute: SITE_TITLE_DEFAULT },
   description: SITE_DESCRIPTION,
+  keywords: [
+    'free movies',
+    'online movies',
+    'free seasons',
+    'watch movies online',
+    'free TV shows',
+    'Movie World',
+  ],
   alternates: { canonical: absoluteUrl('/') },
   openGraph: {
     title: SITE_TITLE_DEFAULT,

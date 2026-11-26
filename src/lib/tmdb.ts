@@ -113,6 +113,18 @@ export async function getAiringTodayTv(page = 1): Promise<TmdbPagedResponse<Tmdb
   return tmdbFetch('/tv/airing_today', { page });
 }
 
+export async function getTopRatedTv(page = 1): Promise<TmdbPagedResponse<TmdbMediaListItem>> {
+  return tmdbFetch('/tv/top_rated', { page });
+}
+
+export async function getUpcomingMovies(page = 1): Promise<TmdbPagedResponse<TmdbMediaListItem>> {
+  return tmdbFetch('/movie/upcoming', { page });
+}
+
+export async function getOnTheAirTv(page = 1): Promise<TmdbPagedResponse<TmdbMediaListItem>> {
+  return tmdbFetch('/tv/on_the_air', { page });
+}
+
 export async function searchMulti(query: string, page = 1): Promise<TmdbPagedResponse<TmdbMediaListItem>> {
   return tmdbFetch('/search/multi', { query, page, include_adult: 'false' });
 }

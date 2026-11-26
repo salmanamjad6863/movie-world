@@ -28,11 +28,19 @@ export async function generateMetadata({
   const title = q ? `Search “${q}”` : `Search ${type}`;
   const description = q
     ? `Results for “${q}” on ${SITE_NAME} — browse matching ${type.toLowerCase()}.`
-    : `Search ${type.toLowerCase()} across trending titles, popular films, and TV seasons.`;
+    : `Search free movies and free TV seasons online. Find popular films, series, and what to watch next on ${SITE_NAME}.`;
 
   return {
     title,
     description,
+    keywords: [
+      'free movies',
+      'online movies',
+      'free seasons',
+      'search movies',
+      'search TV shows',
+      SITE_NAME,
+    ],
     alternates: {
       canonical: absoluteUrl(
         q

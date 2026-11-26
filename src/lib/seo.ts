@@ -42,15 +42,45 @@ export function buildMediaMetadata(input: {
   backdropPath?: string | null;
   posterPath?: string | null;
   noIndex?: boolean;
+  keywords?: string[];
 }): Metadata {
-  const description = truncate(input.description) || `Watch ${input.title} on ${SITE_NAME}.`;
+  const isTv = input.type === 'tv';
+  const watchPhrase = isTv
+    ? `Watch ${input.title} free seasons online`
+    : `Watch ${input.title} free online`;
+  const description =
+    truncate(input.description) ||
+    `${watchPhrase} on ${SITE_NAME}. Browse cast, seasons, and similar titles.`;
   const url = absoluteUrl(input.path);
   const images = mediaOpenGraphImage(input.backdropPath, input.posterPath);
   const twitterImages = images?.map((img) => (typeof img === 'string' ? img : String(img.url)));
+  const seoTitle = isTv
+    ? `${input.title} — Free Seasons Online`
+    : `${input.title} — Free Movie Online`;
+  const keywords = input.keywords?.length
+    ? input.keywords
+    : isTv
+      ? [
+          input.title,
+          'free seasons',
+          'watch TV online',
+          'free TV shows',
+          'stream series',
+          SITE_NAME,
+        ]
+      : [
+          input.title,
+          'free movies',
+          'online movies',
+          'watch movies online',
+          'stream movies',
+          SITE_NAME,
+        ];
 
   return {
-    title: input.title,
+    title: seoTitle,
     description,
+    keywords,
     alternates: { canonical: url },
     robots: input.noIndex
       ? { index: false, follow: true, googleBot: { index: false, follow: true } }
@@ -59,14 +89,14 @@ export function buildMediaMetadata(input: {
       type: input.type === 'website' ? 'website' : 'video.other',
       url,
       siteName: SITE_NAME,
-      title: `${input.title} | ${SITE_NAME}`,
+      title: `${seoTitle} | ${SITE_NAME}`,
       description,
       images,
       locale: 'en_US',
     },
     twitter: {
       card: images ? 'summary_large_image' : 'summary',
-      title: `${input.title} | ${SITE_NAME}`,
+      title: `${seoTitle} | ${SITE_NAME}`,
       description,
       images: twitterImages,
     },
@@ -97,6 +127,38 @@ export function organizationJsonLd() {
     name: SITE_NAME,
     url: SITE_URL,
     logo: absoluteUrl('/icon.png'),
+  };
+}
+
+export function collectionPageJsonLd(input: {
+  name: string;
+  description: string;
+  path: string;
+  itemUrls?: string[];
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: input.name,
+    description: input.description,
+    url: absoluteUrl(input.path),
+    isPartOf: {
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    ...(input.itemUrls?.length
+      ? {
+          mainEntity: {
+            '@type': 'ItemList',
+            itemListElement: input.itemUrls.slice(0, 36).map((url, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              url,
+            })),
+          },
+        }
+      : {}),
   };
 }
 
