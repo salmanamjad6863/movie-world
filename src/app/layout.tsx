@@ -51,6 +51,9 @@ export const metadata: Metadata = {
   publisher: SITE_NAME,
   category: 'entertainment',
   keywords: [...SITE_KEYWORDS],
+  verification: {
+    google: '1YsqkLn0uTxTK51uv-klinxqnrZwrPbbVaHR58xQX04',
+  },
   alternates: {
     canonical: absoluteUrl('/'),
   },
