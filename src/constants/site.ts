@@ -2,9 +2,28 @@
  * Site configuration for SEO and metadata
  */
 
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+function normalizeSiteUrl(value: string): string {
+  const trimmed = value.trim().replace(/\/$/, '');
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function resolveSiteUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (explicit) return normalizeSiteUrl(explicit);
+
+  // Prefer the stable production domain over ephemeral deployment URLs
+  const production = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (production) return normalizeSiteUrl(production);
+
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) return normalizeSiteUrl(vercel);
+
+  return 'http://localhost:3000';
+}
+
+export const SITE_URL = resolveSiteUrl();
 
 export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'Movie World';
 
